@@ -6,6 +6,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # allauth
     path('accounts/', include('allauth.urls')),
-    # 로그인 후 랜딩
-    path('app/', core_views.app_home, name='app_home'),
+    
+    # core 앱의 URL 포함
+    path('', include('core.urls')),  
 ]

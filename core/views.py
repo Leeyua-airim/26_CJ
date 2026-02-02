@@ -4,4 +4,5 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def app_home(request):
-    return HttpResponse("Welcome to the protected app home page!")
+    return render(request, "core/app_home.html")
+

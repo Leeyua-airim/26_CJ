@@ -1,14 +1,113 @@
-{% extends "account/login.html" %}
+{% extends "base.html" %}
 {% load socialaccount %}
 
-{% block content %}
-  {{ block.super }}
+{% block title %}로그인 | CJ AI Agent{% endblock %}
 
-  <hr>
+{% block body %}
+  <div class="header">
+    <div class="brand">
+      <div class="dots">
+        <div class="dot blue"></div>
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+      </div>
+      <div>CJ 인재원 | 그룹 CDP Test</div>
+    </div>
 
-  <p>
-    <a href="{% provider_login_url 'google' %}">
-      Google로 로그인
-    </a>
-  </p>
+    <div class="badge">
+      <span class="bar"></span>
+      <span>Google 우선 로그인</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 style="margin:0;">로그인 안내</h2>
+      <div class="muted" style="margin-top:10px;">
+        일반 사용자는 <b>Google 로그인</b>으로 빠르게 접속합니다.<br/>
+        기업회원은 필요 시 <b>로컬 계정</b>(보조)으로도 접속할 수 있습니다.<br/><br/>
+
+        회원가입은 기본적으로 닫혀 있으며,<br/>
+        기업회원은 <b>초대 링크</b>를 통해서만 가입이 가능합니다.
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted">
+        로그인 성공 후에는 간단 화면으로 이동하며,<br/>
+        상단에 <b>사용자 이메일</b>이 표시됩니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0;">Google 로그인</h2>
+
+      <div style="margin-top:14px;">
+        {# next=/app/ 으로 이동을 확정합니다 #}
+        <a href="{% provider_login_url 'google' %}?next=/app/" style="text-decoration:none;">
+          <button class="btn btn-google" type="button">Google로 로그인</button>
+        </a>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="muted" style="font-weight:800;">로컬 로그인(기업회원 전용)</div>
+
+      {% if form.errors %}
+        <div class="error">
+          입력값을 확인해 주세요.
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'account_login' %}">
+        {% csrf_token %}
+
+        <div class="field">
+          <label for="id_login">Username</label>
+          <input
+            id="id_login"
+            name="login"
+            type="text"
+            autocomplete="username"
+            placeholder="기업회원 Username"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="id_password">Password</label>
+          <input
+            id="id_password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="비밀번호"
+            required
+          />
+        </div>
+
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% else %}
+          {# 로컬 로그인도 /app/ 으로 이동하게 기본값을 보장합니다 #}
+          <input type="hidden" name="{{ redirect_field_name }}" value="/app/" />
+        {% endif %}
+
+        <div style="margin-top:14px;">
+          <button class="btn btn-secondary" type="submit">로컬 로그인</button>
+        </div>
+
+        <div style="margin-top:12px;" class="muted">
+          {# 회원가입은 초대 링크를 통해서만: 기본 signup 링크를 직접 노출하지 않습니다 #}
+          <div style="margin-top:6px;">
+            <span style="font-weight:700;">기업회원 가입:</span>
+            초대 링크로 접속해 주세요.
+          </div>
+          <div style="margin-top:8px;">
+            <a href="{% url 'account_reset_password' %}">비밀번호 재설정</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 {% endblock %}

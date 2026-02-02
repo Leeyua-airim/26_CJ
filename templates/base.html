@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}CJ AI Agent{% endblock %}</title>
+  <style>
+    :root{
+      --cj-blue:#005BAC;
+      --cj-red:#E60012;
+      --cj-yellow:#FFD100;
+      --cj-black:#111111;
+      --cj-white:#FFFFFF;
+      --cj-gray:#F3F4F6;
+      --cj-gray2:#6B7280;
+    }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: var(--cj-gray);
+      color: var(--cj-black);
+    }
+    .container{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 26px 16px;
+    }
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom: 18px;
+    }
+    .brand{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-weight: 900;
+    }
+    .dots{ display:flex; gap:6px; }
+    .dot{ width:10px; height:10px; border-radius:999px; }
+    .dot.blue{ background:var(--cj-blue); }
+    .dot.red{ background:var(--cj-red); }
+    .dot.yellow{ background:var(--cj-yellow); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: var(--cj-white);
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.05);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid #E5E7EB;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 800;
+      background: var(--cj-white);
+    }
+    .badge .bar{
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--cj-blue);
+    }
+
+    .btn{
+      width:100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .btn-google{
+      background: var(--cj-blue);
+      color: var(--cj-white);
+    }
+    .btn-google:hover{ filter: brightness(.95); }
+
+    .btn-secondary{
+      background: var(--cj-white);
+      border:1px solid #E5E7EB;
+    }
+    .btn-secondary:hover{ border-color:#CBD5E1; }
+
+    .muted{ color: var(--cj-gray2); line-height: 1.6; }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top: 12px;
+    }
+    label{ font-weight: 800; font-size: 14px; }
+    input{
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 12px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus{
+      border-color: var(--cj-blue);
+      box-shadow: 0 0 0 4px rgba(0,91,172,.12);
+    }
+    .error{
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #991B1B;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+    .divider{
+      height:1px;
+      background:#E5E7EB;
+      margin: 16px 0;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% block body %}{% endblock %}
+  </div>
+</body>
+</html>

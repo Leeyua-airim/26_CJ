@@ -5,7 +5,6 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR/".env")
 
-SECRET_KEY = 'django-insecure-6puzszkbi)(g6!4hwt#!-q-=^7g5wi&!g+b*9)*0rd00!b&e@h'
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", 
                        "dev-only-change-me")
@@ -17,7 +16,14 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+ALLOWED_SIGNUP_DOMAINS = [
+    d.strip().lower()
+    for d in os.getenv("ALLOWED_SIGNUP_DOMAINS", "").split(",")
+    if d.strip()
+]
 
+# ACCOUNT_ADAPTER = "core.adapters.DomainRestrictedAccountAdapter"
+# SOCIALACCOUNT_ADAPTER = "core.adapters.DomainRestrictedSocialAccountAdapter"
 
 
 # Application definition
@@ -39,8 +45,8 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "allauth.socialaccount.providers.openid_connect",
-
+    # "allauth.socialaccount.providers.openid_connect",
+    "allauth.socialaccount.providers.google",
 ]
 
 SITE_ID = 1
@@ -68,20 +74,44 @@ AUTHENTICATION_BACKENDS = [
 
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/app/"
-LOGOUT_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+
+        # (핵심) 소셜에서 verified email을 받았고,
+        # 그 이메일이 기존 로컬 계정(User)에 있으면 그 계정으로 로그인 처리
+        "EMAIL_AUTHENTICATION": True,
+
+        # (권장) 이후부터는 이메일이 바뀌어도 구글 로그인이 되도록
+        # SocialAccount를 기존 로컬 계정에 자동 연결
+        "EMAIL_AUTHENTICATION_AUTO_CONNECT": True,
+    }
+}
+
+
 
 # allauth settings 최신 설정으로 정리
-ACCOUNT_EMAIL_VERIFICATION = "none"
+# 로그인은 username 기반(로컬), 구글은 별도 버튼
 ACCOUNT_LOGIN_METHODS = {"username"}
+
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_UNIQUE_EMAIL = True
+
+# 로컬 가입 시 email까지 받는 형태로 정리
+ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
+
+# 아래 2개는 SIGNUP_FIELDS로 대체되는 흐름이라, 가능하면 정리 권장
+# (하위 호환을 위해 당장은 둬도 되지만, 중복/혼선을 줄이려면 정리하는 편이 낫습니다)
+# ACCOUNT_EMAIL_REQUIRED = True
+# SOCIALACCOUNT_EMAIL_REQUIRED = True
 
 
 # 소셜 로그인 : 추가 가입 화면으로 보내지 말고 자동으로 계정 생성 및 연결
 SOCIALACCOUNT_AUTO_SIGNUP = True
-
-# 구글 이메일은 받는게 맞고,
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
-ACCOUNT_EMAIL_REQUIRED = True
-SOCIALACCOUNT_EMAIL_REQUIRED = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -90,8 +120,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
 
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    
-    
+        
     # 추가 (allauth 65+ 필수)
     "allauth.account.middleware.AccountMiddleware",
 

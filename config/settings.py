@@ -83,11 +83,11 @@ SOCIALACCOUNT_PROVIDERS = {
 
         # (핵심) 소셜에서 verified email을 받았고,
         # 그 이메일이 기존 로컬 계정(User)에 있으면 그 계정으로 로그인 처리
-        "EMAIL_AUTHENTICATION": True,
+        # "EMAIL_AUTHENTICATION": True,
 
         # (권장) 이후부터는 이메일이 바뀌어도 구글 로그인이 되도록
         # SocialAccount를 기존 로컬 계정에 자동 연결
-        "EMAIL_AUTHENTICATION_AUTO_CONNECT": True,
+        # "EMAIL_AUTHENTICATION_AUTO_CONNECT": True,
     }
 }
 
@@ -99,15 +99,14 @@ ACCOUNT_LOGIN_METHODS = {"username"}
 
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_UNIQUE_EMAIL = False
 
 # 로컬 가입 시 email까지 받는 형태로 정리
-ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
+ACCOUNT_SIGNUP_FIELDS = []
 
 # 아래 2개는 SIGNUP_FIELDS로 대체되는 흐름이라, 가능하면 정리 권장
 # (하위 호환을 위해 당장은 둬도 되지만, 중복/혼선을 줄이려면 정리하는 편이 낫습니다)
-# ACCOUNT_EMAIL_REQUIRED = True
-# SOCIALACCOUNT_EMAIL_REQUIRED = True
+# SOCIALACCOUNT_EMAIL_REQUIRED = False
 
 
 # 소셜 로그인 : 추가 가입 화면으로 보내지 말고 자동으로 계정 생성 및 연결
@@ -201,3 +200,25 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# config/settings.py
+AUTH_USER_MODEL = "core.User"
+
+ACCOUNT_FORMS = {
+    "login": "core.forms.LocalCompositeLoginForm",
+}
+
+
+# allauth가 username 필드를 찾을 때, 우리 커스텀 User의 login_id를 사용하도록 지정
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "login_id"
+
+# email 필드명도 명시(권장)
+ACCOUNT_USER_MODEL_EMAIL_FIELD = "email"
+
+
+# 개발환경에서는 반드시 False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"

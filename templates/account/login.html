@@ -63,51 +63,67 @@
         {% csrf_token %}
 
         <div class="field">
-          <label for="id_login">Username</label>
-          <input
-            id="id_login"
-            name="login"
-            type="text"
-            autocomplete="username"
-            placeholder="기업회원 Username"
-            required
-          />
+            <label for="id_affiliation">소속</label>
+            <select id="id_affiliation" name="affiliation" required>
+            <option value="" selected disabled>소속을 선택해 주세요</option>
+            <option value="HQ">지주사</option>
+            <option value="OV">올리브영</option>
+            <option value="DT">대한통운</option>
+            <option value="JJ">제일제당</option>
+            <option value="ENM">ENM</option>
+            <option value="FD">푸드빌</option>
+            </select>
         </div>
 
         <div class="field">
-          <label for="id_password">Password</label>
-          <input
+            <label for="id_employee_no">사번</label>
+            <input
+            id="id_employee_no"
+            name="employee_no"
+            type="text"
+            autocomplete="username"
+            placeholder="예: CJ000001"
+            required
+            />
+        </div>
+
+        <div class="field">
+            <label for="id_password">비밀번호</label>
+            <input
             id="id_password"
             name="password"
             type="password"
             autocomplete="current-password"
             placeholder="비밀번호"
             required
-          />
+            />
         </div>
 
         {% if redirect_field_value %}
-          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
         {% else %}
-          {# 로컬 로그인도 /app/ 으로 이동하게 기본값을 보장합니다 #}
-          <input type="hidden" name="{{ redirect_field_name }}" value="/app/" />
+            <input type="hidden" name="{{ redirect_field_name }}" value="/app/" />
         {% endif %}
 
-        <div style="margin-top:14px;">
-          <button class="btn btn-secondary" type="submit">로컬 로그인</button>
+        <!-- 🔎 디버그용: 실패 원인을 화면에서 바로 확인 -->
+        {% if form.errors %}
+        <div class="error">
+            <div><b>form.errors</b></div>
+            <pre style="white-space:pre-wrap;">{{ form.errors }}</pre>
         </div>
+        {% endif %}
 
-        <div style="margin-top:12px;" class="muted">
-          {# 회원가입은 초대 링크를 통해서만: 기본 signup 링크를 직접 노출하지 않습니다 #}
-          <div style="margin-top:6px;">
-            <span style="font-weight:700;">기업회원 가입:</span>
-            초대 링크로 접속해 주세요.
-          </div>
-          <div style="margin-top:8px;">
-            <a href="{% url 'account_reset_password' %}">비밀번호 재설정</a>
-          </div>
+        {% if form.non_field_errors %}
+        <div class="error">
+            <div><b>non_field_errors</b></div>
+            <pre style="white-space:pre-wrap;">{{ form.non_field_errors }}</pre>
         </div>
-      </form>
+        {% endif %}
+
+            <div style="margin-top:14px;">
+                <button class="btn btn-secondary" type="submit">로컬 로그인</button>
+            </div>
+        </form>
     </div>
   </div>
 {% endblock %}

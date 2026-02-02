@@ -88,7 +88,11 @@
     </div>
 
     <div style="display:flex; gap:12px; align-items:center;">
-      <div class="email">{{ request.user.email }}</div>
+      <div class="email">
+        {% if request.user.is_authenticated %}
+            {{ request.user.get_display_identity }}
+        {% endif %}
+      </div>
       <form method="post" action="{% url 'account_logout' %}">
         {% csrf_token %}
         <button class="btn" type="submit">로그아웃</button>

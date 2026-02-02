@@ -1,0 +1,14 @@
+{% extends "account/login.html" %}
+{% load socialaccount %}
+
+{% block content %}
+  {{ block.super }}
+
+  <hr>
+
+  <p>
+    <a href="{% provider_login_url 'google' %}">
+      Google로 로그인
+    </a>
+  </p>
+{% endblock %}

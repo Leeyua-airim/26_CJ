@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>프로필 완성</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;">
+    <h2 style="margin-top:0;">프로필 정보를 입력해 주세요</h2>
+    <p style="color:#6b7280;line-height:1.6;">
+      업무 Agent 사용을 위해 소속/사번/성명이 필요합니다.
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom:10px;">
+        <label>소속</label><br/>
+        {{ form.affiliation }}
+        {% if form.affiliation.errors %}<div style="color:#e11d48;">{{ form.affiliation.errors }}</div>{% endif %}
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>사번</label><br/>
+        {{ form.employee_no }}
+        {% if form.employee_no.errors %}<div style="color:#e11d48;">{{ form.employee_no.errors }}</div>{% endif %}
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>성명</label><br/>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}<div style="color:#e11d48;">{{ form.full_name.errors }}</div>{% endif %}
+      </div>
+
+      <button type="submit" style="padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#111;color:#fff;cursor:pointer;">
+        저장
+      </button>
+    </form>
+  </div>
+</body>
+</html>

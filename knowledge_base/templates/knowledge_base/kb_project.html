@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>지식베이스</title>
+  <style>
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background:#f3f4f6;
+      color:#111;
+    }
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid #e5e7eb;
+      padding:12px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .wrap{
+      max-width: 1100px;
+      margin: 16px auto;
+      padding: 0 16px;
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:12px;
+    }
+    .panel{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      overflow:hidden;
+    }
+    .header{
+      padding:12px 14px;
+      border-bottom:1px solid #e5e7eb;
+      font-weight:900;
+    }
+    .body{
+      padding:12px 14px;
+    }
+    label{
+      display:block;
+      font-weight:800;
+      margin-top:10px;
+      margin-bottom:6px;
+      font-size:13px;
+      color:#374151;
+    }
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      font-family:inherit;
+      box-sizing:border-box;
+    }
+    button{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#111;
+      color:#fff;
+      cursor:pointer;
+      font-weight:900;
+      width:100%;
+    }
+    .hint{ color:#6b7280; font-size:13px; line-height:1.5; }
+    .doc{
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:10px;
+      background:#fff;
+    }
+    .title{ font-weight:900; }
+    .meta{ color:#6b7280; font-size:13px; margin-top:6px; line-height:1.4; }
+    .mini{
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+      font-weight:900;
+      color:#111;
+      margin-top:8px;
+    }
+    pre{
+      white-space:pre-wrap;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:10px 12px;
+      margin-top:10px;
+      max-height:260px;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <a href="/app/" style="text-decoration:none;color:#111;font-weight:900;">← 대시보드</a>
+      <a href="/app/agent/project/{{ project.id }}/" style="text-decoration:none;color:#111;font-weight:900;">업무 Agent</a>
+      <div style="font-weight:900;">지식베이스 | {{ project.name }}</div>
+    </div>
+    <div class="hint">허용: xlsx, xls, pdf / 최대 30MB / PDF는 텍스트 추출만</div>
+  </div>
+
+  <div class="wrap">
+    <div class="panel">
+      <div class="header">문서 업로드</div>
+      <div class="body">
+        <label>파일</label>
+        <input id="file" type="file" />
+
+        <label>제목(선택)</label>
+        <input id="title" type="text" placeholder="비워두면 파일명 사용" />
+
+        <label>중요도(1~5)</label>
+        <select id="importance">
+          <option value="1">1 (약한 힌트)</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="4">4</option>
+          <option value="5">5 (정답 기준)</option>
+        </select>
+
+        <label>태그(콤마 구분)</label>
+        <input id="tags" type="text" placeholder="예: HR, 커리어, 단기" />
+        
+        <button id="uploadBtn" type="button">업로드</button>
+        <div class="hint">
+            ※ 업로드는 ‘청킹까지’ 수행됩니다. <br>pinecone 검색에 반영하려면 인덱싱 실행을 별도로 진행해 주세요.
+        </div>
+        
+        
+        <div class="hint" id="status" style="margin-top:10px;"></div>
+
+
+        <hr style="margin:14px 0; border:none; border-top:1px solid #E5E7EB;" />
+
+        <div style="font-weight:900; margin-bottom:8px;">Pinecone 인덱싱</div>
+
+        <label>인덱싱 처리량(limit)</label>
+        <input id="indexLimit" type="number" value="300" min="1" max="2000" />
+
+        <label>배치 크기(batch)</label>
+        <input id="indexBatch" type="number" value="64" min="1" max="256" />
+
+        <div style="display:flex; gap:8px; margin-top:10px;">
+        <button id="indexBtn" type="button" style="width:auto; flex:1;">
+            인덱싱 실행
+        </button>
+
+        <button id="forceIndexBtn" type="button" style="width:auto; flex:1; border-color:#ef4444; color:#ef4444;">
+            강제 재인덱싱
+        </button>
+        </div>
+
+        <div class="hint" id="indexStatus" style="margin-top:10px;"></div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="header">문서 목록</div>
+      <div class="body">
+        <div id="docs"></div>
+        <pre id="preview" style="display:none;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const projectId = {{ project.id }};
+    const docsEl = document.getElementById("docs");
+    const previewEl = document.getElementById("preview");
+    const statusEl = document.getElementById("status");
+
+    const fileEl = document.getElementById("file");
+    const titleEl = document.getElementById("title");
+    const importanceEl = document.getElementById("importance");
+    const tagsEl = document.getElementById("tags");
+    const uploadBtn = document.getElementById("uploadBtn");
+
+    const indexLimitEl = document.getElementById("indexLimit");
+    const indexBatchEl = document.getElementById("indexBatch");
+    const indexBtn = document.getElementById("indexBtn");
+    const forceIndexBtn = document.getElementById("forceIndexBtn");
+    const indexStatusEl = document.getElementById("indexStatus");
+
+    function getCsrfToken() {
+      const name = "csrftoken";
+      const cookies = document.cookie.split(";");
+      let i = 0;
+
+      while (i < cookies.length) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + "=")) {
+          return cookie.substring((name + "=").length);
+        }
+        i = i + 1;
+      }
+      return "";
+    }
+
+    function escapeHtml(s) {
+        if (s === null || s === undefined) {
+            return "";
+        }
+    return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    async function loadDocs() {
+      docsEl.innerHTML = "";
+      previewEl.style.display = "none";
+      previewEl.textContent = "";
+
+      const res = await fetch(`/app/kb/api/project/${projectId}/documents/`);
+      const data = await res.json();
+
+      let i = 0;
+      while (i < data.documents.length) {
+        const d = data.documents[i];
+
+        const div = document.createElement("div");
+        div.className = "doc";
+
+        const tagsText = (d.tags || []).join(", ");
+
+        div.innerHTML =
+          `<div class="title">${escapeHtml(d.title)}</div>` +
+          `<div class="meta">source: ${escapeHtml(d.source_type)} | importance: ${d.importance} | tags: ${escapeHtml(tagsText)}</div>` +
+          `<button class="mini" type="button" data-doc="${d.id}">청크 미리보기</button>`;
+
+        docsEl.appendChild(div);
+
+        i = i + 1;
+      }
+
+      const buttons = docsEl.querySelectorAll("button[data-doc]");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", async function() {
+          const docId = btn.getAttribute("data-doc");
+          await loadChunks(docId);
+        });
+      });
+    }
+
+    async function loadChunks(docId) {
+      previewEl.style.display = "block";
+      previewEl.textContent = "로딩 중...";
+
+      const res = await fetch(`/app/kb/api/document/${docId}/chunks/`);
+      const data = await res.json();
+
+      let out = "";
+      let i = 0;
+      while (i < data.chunks.length) {
+        const c = data.chunks[i];
+        out += `#${c.chunk_index} (importance=${c.importance})\n`;
+        out += c.text_preview + "\n";
+        out += "------------------------------\n";
+        i = i + 1;
+      }
+
+      previewEl.textContent = out;
+    }
+
+    async function upload() {
+      statusEl.textContent = "";
+      const f = fileEl.files[0];
+
+      if (!f) {
+        statusEl.textContent = "파일을 선택해 주세요.";
+        return;
+      }
+
+      const form = new FormData();
+      form.append("file", f);
+      form.append("title", titleEl.value);
+      form.append("importance", importanceEl.value);
+      form.append("tags", tagsEl.value);
+
+      uploadBtn.disabled = true;
+      statusEl.textContent = "업로드/추출/청킹 처리 중입니다...";
+
+      const res = await fetch(`/app/kb/api/project/${projectId}/upload/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: form,
+      });
+
+      const data = await res.json();
+
+      uploadBtn.disabled = false;
+
+      if (!res.ok) {
+        statusEl.textContent = "실패: " + JSON.stringify(data);
+        return;
+      }
+
+      statusEl.textContent = `성공: 문서ID=${data.document.id}, 생성 청크=${data.chunks_created}`;
+      fileEl.value = "";
+      titleEl.value = "";
+      tagsEl.value = "";
+
+      await loadDocs();
+    }
+
+    uploadBtn.addEventListener("click", async function() {
+      await upload();
+    });
+
+    indexBtn.addEventListener("click", async function () {
+        await runIndexing(false);
+    });
+
+    forceIndexBtn.addEventListener("click", async function () {
+    const ok = confirm("강제 재인덱싱은 프로젝트의 모든 청크를 다시 인덱싱합니다. 진행하시겠습니까?");
+    if (!ok) {
+        return;
+    }
+    await runIndexing(true);});
+
+
+
+    function clampNumber(v, minV, maxV, defaultV) {
+    const n = parseInt(v, 10);
+    if (Number.isNaN(n)) {
+        return defaultV;
+    }
+    if (n < minV) {
+        return minV;
+    }
+    if (n > maxV) {
+        return maxV;
+    }
+    return n;
+    }
+
+    async function runIndexing(force) {
+    indexStatusEl.textContent = "";
+
+    const limit = clampNumber(indexLimitEl.value, 1, 2000, 300);
+    const batch = clampNumber(indexBatchEl.value, 1, 256, 64);
+
+    // 인덱싱 API URL
+    // 예: /app/kb/api/project/3/index/?limit=300&batch=64
+    let url = `/app/kb/api/project/${projectId}/index/?limit=${limit}&batch=${batch}`;
+
+    // force=1이면 “전부 재인덱싱”
+    if (force === true) {
+        url = url + "&force=1";
+    }
+
+    indexBtn.disabled = true;
+    forceIndexBtn.disabled = true;
+    indexStatusEl.textContent = "인덱싱 중입니다... (문서/청크 수에 따라 시간이 걸릴 수 있습니다)";
+
+    const res = await fetch(url, {
+        method: "POST",
+        headers: {
+        "X-CSRFToken": getCsrfToken(),
+        },
+    });
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch (e) {
+        data = { error: "응답 JSON 파싱 실패", detail: String(e) };
+    }
+
+    indexBtn.disabled = false;
+    forceIndexBtn.disabled = false;
+
+    if (!res.ok) {
+        indexStatusEl.textContent = "실패: " + JSON.stringify(data);
+        return;
+    }
+
+    // 예상 응답 예: { indexed_count: 128, limit: 300, batch_size: 64, force: false }
+    const indexed = data.indexed_count || 0;
+    const usedForce = data.force ? "YES" : "NO";
+
+    indexStatusEl.textContent = `완료: indexed=${indexed}개 (force=${usedForce}, limit=${limit}, batch=${batch})`;
+    }
+
+
+    (async function init() {
+      await loadDocs();
+    })();
+  </script>
+</body>
+</html>

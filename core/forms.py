@@ -1,5 +1,6 @@
 # /Users/ijaehwa/github/dev_cj/dev_cj_v2/core/forms.py
 from django import forms
+from .models import User
 from allauth.account.forms import LoginForm
 from django.utils.translation import gettext_lazy as _
 
@@ -64,3 +65,60 @@ class LocalCompositeLoginForm(LoginForm):
         """
         cleaned_data = super().clean()
         return cleaned_data
+
+
+
+class ProfileCompleteForm(forms.ModelForm):
+    """
+    소셜 로그인 최초 가입 사용자의 필수 프로필을 완성하기 위한 폼입니다.
+    """
+
+    class Meta:
+        model = User
+        fields = ["affiliation", "employee_no", "full_name"]
+
+    def clean_employee_no(self):
+        """
+        Returns:
+            str: 공백 제거된 사번 문자열
+        """
+        employee_no = self.cleaned_data.get("employee_no", "")
+
+        if employee_no is None:
+            raise forms.ValidationError("사번은 필수입니다.")
+
+        employee_no = employee_no.strip()
+
+        if not employee_no:
+            raise forms.ValidationError("사번은 필수입니다.")
+
+        return employee_no
+
+    def clean_full_name(self):
+        """
+        Returns:
+            str: 공백 제거된 이름 문자열
+        """
+        full_name = self.cleaned_data.get("full_name", "")
+
+        if full_name is None:
+            raise forms.ValidationError("성명은 필수입니다.")
+
+        full_name = full_name.strip()
+
+        if not full_name:
+            raise forms.ValidationError("성명은 필수입니다.")
+
+        return full_name
+
+    def clean_affiliation(self):
+        """
+        Returns:
+            str: 선택된 affiliation 코드
+        """
+        affiliation = self.cleaned_data.get("affiliation")
+
+        if not affiliation:
+            raise forms.ValidationError("소속은 필수입니다.")
+
+        return affiliation

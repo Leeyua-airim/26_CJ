@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GPT Chat</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    .chat-box { max-width: 900px; margin: 0 auto; }
+    .messages { border: 1px solid #ddd; border-radius: 8px; padding: 16px; height: 60vh; overflow-y: auto; }
+    .msg { margin-bottom: 12px; white-space: pre-wrap; }
+    .role { font-weight: 700; margin-right: 6px; }
+    .composer { display: flex; gap: 8px; margin-top: 12px; }
+    input[type="text"] { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    button { padding: 10px 14px; border-radius: 6px; border: 1px solid #ccc; cursor: pointer; }
+    .hint { color: #666; font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="chat-box">
+    <h1>GPT 채팅</h1>
+
+    <div id="messages" class="messages">
+      {% for m in messages %}
+        <div class="msg">
+          <span class="role">{{ m.role }}:</span>
+          <span>{{ m.content }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="composer">
+      <input id="userInput" type="text" placeholder="메시지를 입력해 주세요." autocomplete="off" />
+      <button id="sendBtn">전송</button>
+    </div>
+
+    <p class="hint">
+      ※ OpenAI API 키는 브라우저에 두지 않고, 서버에서만 호출합니다. :contentReference[oaicite:11]{index=11}
+    </p>
+  </div>
+
+  <script>
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+      }
+      return "";
+    }
+
+    const messagesEl = document.getElementById("messages");
+    const inputEl = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function appendMessage(role, text) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "msg";
+
+      const roleEl = document.createElement("span");
+      roleEl.className = "role";
+      roleEl.textContent = role + ":";
+
+      const textEl = document.createElement("span");
+      textEl.textContent = " " + text;
+
+      wrapper.appendChild(roleEl);
+      wrapper.appendChild(textEl);
+      messagesEl.appendChild(wrapper);
+
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) {
+        return;
+      }
+
+      appendMessage("user", text);
+      inputEl.value = "";
+      inputEl.focus();
+
+      const csrfToken = getCookie("csrftoken");
+
+      const resp = await fetch("/chat/api/send/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        const err = data.error ? data.error : "서버 오류가 발생했습니다.";
+        appendMessage("error", err);
+        return;
+      }
+
+      appendMessage("assistant", data.reply);
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

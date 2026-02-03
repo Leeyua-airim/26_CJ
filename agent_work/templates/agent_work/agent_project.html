@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>업무 Agent</title>
+  <style>
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background:#f3f4f6;
+      color:#111;
+    }
+    .topbar{
+      background:#fff;
+      border-bottom:1px solid #e5e7eb;
+      padding:12px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .wrap{
+      max-width: 1100px;
+      margin: 16px auto;
+      padding: 0 16px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+    }
+    .panel{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      overflow:hidden;
+    }
+    .panel-header{
+      padding:12px 14px;
+      border-bottom:1px solid #e5e7eb;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .chat{
+      height: calc(100vh - 200px);
+      display:flex;
+      flex-direction:column;
+    }
+    .msgs{
+      padding:12px 14px;
+      overflow:auto;
+      flex:1;
+    }
+    .msg{
+      margin-bottom:12px;
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      background:#fff;
+      white-space:pre-wrap;
+      line-height:1.6;
+    }
+    .msg.user{ background:#f9fafb; }
+    .role{ font-size:12px; color:#6b7280; margin-bottom:6px; font-weight:800; }
+    .controls{
+      display:flex;
+      gap:8px;
+      padding:12px 14px;
+      border-top:1px solid #e5e7eb;
+    }
+    textarea{
+      flex:1;
+      resize:none;
+      height:44px;
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      font-family:inherit;
+      box-sizing:border-box;
+    }
+    button{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#111;
+      color:#fff;
+      cursor:pointer;
+      font-weight:900;
+    }
+    button:disabled{ opacity:0.6; cursor:not-allowed; }
+
+    select{
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      font-family:inherit;
+    }
+    .mini-btn{
+      background:#fff;
+      color:#111;
+      border:1px solid #e5e7eb;
+    }
+    .hint{
+      color:#6b7280;
+      font-size:13px;
+      line-height:1.5;
+      font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <a href="/app/" style="text-decoration:none;color:#111;font-weight:900;">← 대시보드</a>
+      <div style="font-weight:900;">{{ project.name }}</div>
+      <div style="color:#6b7280;">({{ request.user.get_display_identity }})</div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div class="hint">대화</div>
+      <select id="conversationSelect">
+        {% for c in conversations %}
+          <option value="{{ c.id }}">{{ c.title }} ({{ c.get_template_type_display }})</option>
+        {% endfor %}
+      </select>
+      <button class="mini-btn" id="newConversationBtn" type="button">+ 새 대화</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="panel chat">
+      <div class="panel-header">
+        <div>대화</div>
+        <div class="hint">Step 3-3: 대화방 전환/메시지 저장 안정화</div>
+      </div>
+
+      <div class="msgs" id="messages"></div>
+
+      <div class="controls">
+        <textarea id="input" placeholder="질문을 입력해 주세요"></textarea>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+            <input type="checkbox" id="rerankToggle" />
+            rerank 사용<br>(bge-reranker-v2-m3)정확도↑, 속도↓
+        </label>
+        
+        <button id="sendBtn" type="button">전송</button>
+        
+
+      </div>
+    </div>
+  </div>
+  <script>
+  const projectId = {{ project.id }};
+  const messagesEl = document.getElementById("messages");
+  const conversationSelect = document.getElementById("conversationSelect");
+  const sendBtn = document.getElementById("sendBtn");
+  const inputEl = document.getElementById("input");
+  const newConversationBtn = document.getElementById("newConversationBtn");
+  const rerankToggleEl = document.getElementById("rerankToggle");
+
+  function getCsrfToken() {
+    const name = "csrftoken";
+    const cookies = document.cookie.split(";");
+    let i = 0;
+
+    while (i < cookies.length) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + "=")) {
+        return cookie.substring((name + "=").length);
+      }
+      i = i + 1;
+    }
+    return "";
+  }
+
+  function renderMessage(role, content, messageId) {
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+
+    if (messageId) {
+      div.dataset.messageId = messageId;
+    }
+
+    const roleEl = document.createElement("div");
+    roleEl.className = "role";
+    roleEl.textContent = role;
+
+    const contentEl = document.createElement("div");
+    contentEl.textContent = content;
+
+    div.appendChild(roleEl);
+    div.appendChild(contentEl);
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function loadMessages(conversationId) {
+    messagesEl.innerHTML = "";
+
+    const res = await fetch(`/app/agent/api/conversation/${conversationId}/messages/`);
+    const data = await res.json();
+
+    let i = 0;
+    while (i < data.messages.length) {
+      const m = data.messages[i];
+      renderMessage(m.role, m.content, m.id);
+      i = i + 1;
+    }
+  }
+
+  async function createConversation() {
+    const payload = {
+      title: "새 대화",
+      template_type: "short",
+    };
+
+    const res = await fetch(`/app/agent/api/project/${projectId}/conversations/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    const opt = document.createElement("option");
+    opt.value = data.conversation.id;
+    opt.textContent = data.conversation.title + " (" + data.conversation.template_label + ")";
+
+    conversationSelect.insertBefore(opt, conversationSelect.firstChild);
+    conversationSelect.value = data.conversation.id;
+
+    await loadMessages(data.conversation.id);
+  }
+
+  async function sendMessage() {
+    const conversationId = conversationSelect.value;
+    const text = inputEl.value.trim();
+
+    if (!text) {
+      return;
+    }
+
+    const useReranker = rerankToggleEl.checked;
+
+    inputEl.value = "";
+    sendBtn.disabled = true;
+
+    // 화면에 먼저 사용자 메시지 표시
+    renderMessage("user", text, null);
+
+    const payload = {
+      message: text,
+      use_reranker: useReranker,
+    };
+
+    try {
+      const res = await fetch(`/app/agent/api/conversation/${conversationId}/send/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const errText = data ? JSON.stringify(data) : "서버 응답을 해석할 수 없습니다.";
+        renderMessage("assistant", "오류가 발생했습니다: " + errText, null);
+        return;
+      }
+
+      // Step6 응답 스키마: {answer, message_id, evidence_top5, use_reranker}
+      renderMessage("assistant", data.answer, data.message_id);
+
+      // (선택) 근거는 Step7에서 UI로 보여줄 예정이므로, 지금은 콘솔 출력만
+      // console.log("evidence_top5:", data.evidence_top5);
+
+    } catch (e) {
+      renderMessage("assistant", "네트워크/스크립트 오류: " + String(e), null);
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  conversationSelect.addEventListener("change", async function() {
+    const conversationId = conversationSelect.value;
+    await loadMessages(conversationId);
+  });
+
+  newConversationBtn.addEventListener("click", async function() {
+    await createConversation();
+  });
+
+  sendBtn.addEventListener("click", async function() {
+    await sendMessage();
+  });
+
+  // 초기 로딩
+  (async function init() {
+    const conversationId = conversationSelect.value;
+    await loadMessages(conversationId);
+  })();
+</script>
+
+  
+</body>
+</html>

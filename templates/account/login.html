@@ -1,129 +1,492 @@
+{# templates/account/login.html #}
 {% extends "base.html" %}
 {% load socialaccount %}
 
 {% block title %}로그인 | CJ AI Agent{% endblock %}
 
 {% block body %}
-  <div class="header">
-    <div class="brand">
-      <div class="dots">
-        <div class="dot blue"></div>
-        <div class="dot red"></div>
-        <div class="dot yellow"></div>
+<style>
+  /* =========================================
+     Auth Page (scoped)
+     ========================================= */
+  .auth-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 20% 20%, rgba(90, 103, 216, 0.10), transparent 60%),
+      radial-gradient(900px 500px at 80% 30%, rgba(16, 185, 129, 0.10), transparent 55%),
+      radial-gradient(900px 500px at 70% 90%, rgba(245, 158, 11, 0.10), transparent 55%),
+      #f6f7fb;
+    padding: 28px 20px 48px;
+  }
+
+  .auth-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  /* Top bar */
+  .auth-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 6px 18px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand .dots {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .brand .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    opacity: .95;
+  }
+  .brand .dot.blue { background: #2563eb; }
+  .brand .dot.red { background: #ef4444; }
+  .brand .dot.yellow { background: #f59e0b; }
+
+  .brand-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.2;
+  }
+  .brand-title .kicker {
+    font-size: 12px;
+    letter-spacing: .2px;
+    color: rgba(15, 23, 42, .65);
+    font-weight: 600;
+  }
+  .brand-title .name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .auth-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.70);
+    border: 1px solid rgba(15, 23, 42, .10);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    color: rgba(15, 23, 42, .75);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .auth-badge .bar {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #2563eb;
+  }
+
+  /* Grid */
+  .auth-grid {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  @media (max-width: 920px) {
+    .auth-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,.82);
+    border: 1px solid rgba(15, 23, 42, .10);
+    border-radius: 18px;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, .08);
+    overflow: hidden;
+  }
+
+  .card-inner {
+    padding: 22px 22px 20px;
+  }
+
+  .card h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+  }
+
+  .muted {
+    color: rgba(15, 23, 42, .70);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(15, 23, 42, .10);
+    margin: 16px 0;
+  }
+
+  /* Left hero */
+  .hero {
+    position: relative;
+  }
+
+  .hero-banner {
+    border-radius: 16px;
+    padding: 18px 18px 16px;
+    background: linear-gradient(110deg,
+      rgba(239, 68, 68, .10) 0%,
+      rgba(245, 158, 11, .10) 22%,
+      rgba(16, 185, 129, .10) 55%,
+      rgba(37, 99, 235, .10) 100%);
+    border: 1px solid rgba(15, 23, 42, .08);
+    margin-bottom: 14px;
+  }
+
+  .hero-title {
+    font-size: 30px;
+    letter-spacing: -0.6px;
+    line-height: 1.15;
+    font-weight: 950;
+    color: #0b1220;
+    margin: 4px 0 8px;
+  }
+
+  .hero-sub {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(15, 23, 42, .75);
+    line-height: 1.65;
+  }
+
+  .hero-points {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+  }
+  .hero-points li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    background: rgba(255,255,255,.65);
+  }
+  .hero-points .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, .95);
+    margin-top: 5px;
+    flex: 0 0 auto;
+  }
+  .hero-points .t {
+    font-size: 13px;
+    color: rgba(15, 23, 42, .78);
+    line-height: 1.55;
+  }
+  .hero-points .t b {
+    color: #0f172a;
+  }
+
+  /* Right login card header */
+  .login-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .login-head .hint {
+    font-size: 12px;
+    color: rgba(15, 23, 42, .65);
+    font-weight: 700;
+  }
+
+  /* Buttons */
+  .btn {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    width: 100%;
+    transition: transform .04s ease, box-shadow .12s ease, opacity .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+
+  .btn-google {
+    background: #0b57d0;
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(11, 87, 208, .18);
+  }
+  .btn-google:hover { box-shadow: 0 16px 34px rgba(11, 87, 208, .22); }
+
+  .btn-local {
+    background: #0f172a;
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .16);
+  }
+  .btn-local:hover { box-shadow: 0 16px 34px rgba(15, 23, 42, .20); }
+
+  /* Form */
+  .field {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .field label {
+    font-size: 12px;
+    color: rgba(15, 23, 42, .75);
+    font-weight: 800;
+  }
+
+  .control,
+  .field input,
+  .field select {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, .14);
+    background: rgba(255,255,255,.90);
+    padding: 11px 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+
+  .field input:focus,
+  .field select:focus {
+    border-color: rgba(37, 99, 235, .45);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+    background: #fff;
+  }
+
+  .help {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(15, 23, 42, .60);
+    line-height: 1.55;
+  }
+
+  /* Error */
+  .error-box {
+    margin-top: 12px;
+    padding: 12px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(239, 68, 68, .22);
+    background: rgba(239, 68, 68, .06);
+    color: rgba(127, 29, 29, .90);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .error-box b { color: rgba(127, 29, 29, .95); }
+
+  details.debug {
+    margin-top: 10px;
+  }
+  details.debug summary {
+    cursor: pointer;
+    font-weight: 800;
+    color: rgba(15, 23, 42, .70);
+  }
+  details.debug pre {
+    white-space: pre-wrap;
+    margin: 8px 0 0;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, .10);
+    background: rgba(255,255,255,.70);
+    color: rgba(15, 23, 42, .78);
+  }
+</style>
+
+<div class="auth-page">
+  <div class="auth-shell">
+
+    <div class="auth-topbar">
+      <div class="brand">
+        <div class="dots" aria-hidden="true">
+          <div class="dot blue"></div>
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+        </div>
+        <div class="brand-title">
+          <div class="kicker">CJ 인재원</div>
+          <div class="name">Test Ver</div>
+        </div>
       </div>
-      <div>CJ 인재원 | 그룹 CDP Test</div>
+
+      <div class="auth-badge">
+        <span class="bar"></span>
+        Google 우선 로그인
+      </div>
     </div>
 
-    <div class="badge">
-      <span class="bar"></span>
-      <span>Google 우선 로그인</span>
-    </div>
-  </div>
+    <div class="auth-grid">
 
-  <div class="grid">
-    <div class="card">
-      <h2 style="margin:0;">로그인 안내</h2>
-      <div class="muted" style="margin-top:10px;">
-        일반 사용자는 <b>Google 로그인</b>으로 빠르게 접속합니다.<br/>
-        기업회원은 필요 시 <b>로컬 계정</b>(보조)으로도 접속할 수 있습니다.<br/><br/>
+      <!-- Left: 안내/브랜딩 -->
+      <div class="card hero">
+        <div class="card-inner">
+          <div class="hero-banner">
+            <div class="muted" style="font-weight:900; letter-spacing:-0.2px;">CJ Group HR Agent Sol</div>
+            <div class="hero-title">
+              통합 로그인·접근 제어<br/>
+              
+            </div>
+            <p class="hero-sub">
+              일반 사용자는 <b>Google SSO</b>로 간편하게 접속합니다.<br/>
+              기업회원(관리/운영)은 필요 시 <b>로컬 계정</b>으로도 접속할 수 있습니다.
+            </p>
+          </div>
 
-        회원가입은 기본적으로 닫혀 있으며,<br/>
-        기업회원은 <b>초대 링크</b>를 통해서만 가입이 가능합니다.
+          <ul class="hero-points">
+            <li>
+              <div class="dot" aria-hidden="true"></div>
+              <div class="t">
+                로그인 후 상단에는 <b>이메일 또는 사번 기반 식별자</b>가 표시됩니다.<br/>
+                (예: <b>HQ:CJ000001 · 이재화</b>)
+              </div>
+            </li>
+            <li>
+              <div class="dot" aria-hidden="true"></div>
+              <div class="t">
+                회원가입은 기본적으로 닫혀 있으며, 기업회원은 <b>초대 링크</b>를 통해서만 가입이 가능합니다.
+              </div>
+            </li>
+            <li>
+              <div class="dot" aria-hidden="true"></div>
+              <div class="t">
+                계열사 공통 정책(SSO/권한/감사로그)과<br/>
+                계열사별 정책(조직·피처·접근범위)을 분리하여 확장할 수 있습니다.
+              </div>
+            </li>
+          </ul>
+
+          <div class="divider"></div>
+          <div class="muted" style="font-size:12px;">
+            보안 정책 확정 후, 도메인 제한/승인 플로우/계정 연결(SSO ↔ 로컬)을 단계적으로 적용하겠습니다.
+          </div>
+        </div>
       </div>
 
-      <div class="divider"></div>
+      <!-- Right: 로그인 -->
+      <div class="card">
+        <div class="card-inner">
+          <div class="login-head">
+            <h2>로그인</h2>
+            <div class="hint">SSO 우선 · 로컬 보조</div>
+          </div>
 
-      <div class="muted">
-        로그인 성공 후에는 간단 화면으로 이동하며,<br/>
-        상단에 <b>사용자 이메일</b>이 표시됩니다.
-      </div>
-    </div>
+          <!-- Google -->
+          <div style="margin-top:14px;">
+            <a href="{% provider_login_url 'google' %}?next=/app/" style="text-decoration:none;">
+              <button class="btn btn-google" type="button">Google로 로그인</button>
+            </a>
+            <div class="help">
+              일반 사용자는 Google 계정으로 접속하시는 것을 권장드립니다.
+            </div>
+          </div>
 
-    <div class="card">
-      <h2 style="margin:0;">Google 로그인</h2>
+          <div class="divider"></div>
 
-      <div style="margin-top:14px;">
-        {# next=/app/ 으로 이동을 확정합니다 #}
-        <a href="{% provider_login_url 'google' %}?next=/app/" style="text-decoration:none;">
-          <button class="btn btn-google" type="button">Google로 로그인</button>
-        </a>
-      </div>
+          <!-- Local -->
+          <div class="muted" style="font-weight:900; color:#0f172a;">로컬 로그인 (기업회원 전용)</div>
 
-      <div class="divider"></div>
+          {# 사용자 친화형 에러 영역 #}
+          {% if form.errors or form.non_field_errors %}
+            <div class="error-box">
+              <b>로그인에 실패했습니다.</b><br/>
+              입력값을 다시 확인해 주세요.
+              {% if form.non_field_errors %}
+                <div style="margin-top:6px;">
+                  {{ form.non_field_errors }}
+                </div>
+              {% endif %}
 
-      <div class="muted" style="font-weight:800;">로컬 로그인(기업회원 전용)</div>
+              {# 개발 중에만 펼쳐볼 수 있게 (원하시면 나중에 제거) #}
+              <details class="debug">
+                <summary>개발용 상세 오류 보기</summary>
+                <pre>{{ form.errors }}</pre>
+              </details>
+            </div>
+          {% endif %}
 
-      {% if form.errors %}
-        <div class="error">
-          입력값을 확인해 주세요.
-        </div>
-      {% endif %}
+          <form method="post" action="{% url 'account_login' %}" style="margin-top:10px;">
+            {% csrf_token %}
 
-      <form method="post" action="{% url 'account_login' %}">
-        {% csrf_token %}
+            <div class="field">
+              <label for="id_affiliation">소속</label>
+              <select id="id_affiliation" name="affiliation" required>
+                <option value="" selected disabled>소속을 선택해 주세요</option>
+                <option value="HQ">지주사</option>
+                <option value="OV">올리브영</option>
+                <option value="DT">대한통운</option>
+                <option value="JJ">제일제당</option>
+                <option value="ENM">ENM</option>
+                <option value="FD">푸드빌</option>
+              </select>
+            </div>
 
-        <div class="field">
-            <label for="id_affiliation">소속</label>
-            <select id="id_affiliation" name="affiliation" required>
-            <option value="" selected disabled>소속을 선택해 주세요</option>
-            <option value="HQ">지주사</option>
-            <option value="OV">올리브영</option>
-            <option value="DT">대한통운</option>
-            <option value="JJ">제일제당</option>
-            <option value="ENM">ENM</option>
-            <option value="FD">푸드빌</option>
-            </select>
-        </div>
+            <div class="field">
+              <label for="id_employee_no">사번</label>
+              <input
+                id="id_employee_no"
+                name="employee_no"
+                type="text"
+                autocomplete="username"
+                placeholder="예: CJ000001"
+                required
+              />
+            </div>
 
-        <div class="field">
-            <label for="id_employee_no">사번</label>
-            <input
-            id="id_employee_no"
-            name="employee_no"
-            type="text"
-            autocomplete="username"
-            placeholder="예: CJ000001"
-            required
-            />
-        </div>
+            <div class="field">
+              <label for="id_password">비밀번호</label>
+              <input
+                id="id_password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="비밀번호"
+                required
+              />
+            </div>
 
-        <div class="field">
-            <label for="id_password">비밀번호</label>
-            <input
-            id="id_password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="비밀번호"
-            required
-            />
-        </div>
-
-        {% if redirect_field_value %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-        {% else %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="/app/" />
-        {% endif %}
-
-        <!-- 🔎 디버그용: 실패 원인을 화면에서 바로 확인 -->
-        {% if form.errors %}
-        <div class="error">
-            <div><b>form.errors</b></div>
-            <pre style="white-space:pre-wrap;">{{ form.errors }}</pre>
-        </div>
-        {% endif %}
-
-        {% if form.non_field_errors %}
-        <div class="error">
-            <div><b>non_field_errors</b></div>
-            <pre style="white-space:pre-wrap;">{{ form.non_field_errors }}</pre>
-        </div>
-        {% endif %}
+            {% if redirect_field_value %}
+              <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+            {% else %}
+              <input type="hidden" name="{{ redirect_field_name }}" value="/app/" />
+            {% endif %}
 
             <div style="margin-top:14px;">
-                <button class="btn btn-secondary" type="submit">로컬 로그인</button>
+              <button class="btn btn-local" type="submit">로컬 로그인</button>
             </div>
-        </form>
+
+            <div class="help" style="margin-top:12px;">
+              비밀번호 재설정이 필요하시면 관리자에게 요청해 주시거나,
+              <a href="{% url 'account_reset_password' %}">비밀번호 재설정</a>을 이용해 주세요.
+            </div>
+          </form>
+
+        </div>
+      </div>
+
     </div>
   </div>
+</div>
 {% endblock %}

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CJ AI Agent - App</title>
+  <style>
+    :root{
+      --cj-blue:#005BAC;
+      --cj-red:#E60012;
+      --cj-yellow:#FFD100;
+      --cj-black:#111111;
+      --cj-white:#FFFFFF;
+      --cj-gray:#F3F4F6;
+      --cj-gray2:#6B7280;
+    }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: var(--cj-gray);
+      color: var(--cj-black);
+    }
+    .topbar{
+      background: var(--cj-white);
+      border-bottom: 3px solid var(--cj-blue);
+      padding: 14px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+    }
+    .dots{
+      display:flex; gap:6px; align-items:center;
+    }
+    .dot{ width:10px; height:10px; border-radius:999px; }
+    .dot.blue{ background:var(--cj-blue); }
+    .dot.red{ background:var(--cj-red); }
+    .dot.yellow{ background:var(--cj-yellow); }
+
+    .email{
+      color: var(--cj-gray2);
+      font-size: 14px;
+    }
+    .btn{
+      border:1px solid #E5E7EB;
+      background: var(--cj-white);
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .btn:hover{ border-color:#CBD5E1; }
+
+    .wrap{
+      max-width: 960px;
+      margin: 22px auto;
+      padding: 0 16px;
+    }
+    .card{
+      background: var(--cj-white);
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .hint{
+      color: var(--cj-gray2);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      margin-top:12px;
+    }
+    .pbox{
+      border:1px solid #E5E7EB;
+      border-radius:14px;
+      padding:14px;
+      background:#fff;
+    }
+    .pname{ font-weight:800; }
+    .pdesc{ color:var(--cj-gray2); font-size:14px; line-height:1.5; margin-top:6px; min-height:42px; }
+    .row{ display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+    .linkbtn{
+      display:inline-block;
+      text-decoration:none;
+      border:1px solid #E5E7EB;
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:800;
+      color:#111;
+      background:#fff;
+    }
+    .linkbtn:hover{ border-color:#CBD5E1; }
+    .create{
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    input, textarea{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid #E5E7EB;
+      border-radius:10px;
+      font-size:14px;
+      font-family:inherit;
+      box-sizing:border-box;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="dots">
+        <div class="dot blue"></div>
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+      </div>
+      <div>CJ 인재원 | 그룹 CDP Test</div>
+    </div>
+
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="email">
+        {% if request.user.is_authenticated %}
+            {{ request.user.get_display_identity }}
+        {% endif %}
+      </div>
+      <form method="post" action="{% url 'account_logout' %}">
+        {% csrf_token %}
+        <button class="btn" type="submit">로그아웃</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h2 style="margin:0;">프로젝트</h2>
+      <div class="hint">
+        프로젝트는 업무/대화/지식베이스의 분리 단위입니다. (PoC: 최대 3개)
+      </div>
+
+      <div class="grid">
+        {% for p in projects %}
+          <div class="pbox">
+            <div class="pname">{{ p.name }}</div>
+            <div class="pdesc">{{ p.description }}</div>
+            <div class="row">
+              <!-- Step 3-2에서 agent_work 라우트를 채우면 정상 동작합니다 -->
+              <a class="linkbtn" href="/app/agent/project/{{ p.id }}/">업무 Agent 열기</a>
+
+              <!-- Step 4에서 kb 라우트를 채우면 정상 동작합니다 -->
+              <a class="linkbtn" href="/app/kb/project/{{ p.id }}/">지식베이스</a>
+            </div>
+          </div>
+        {% endfor %}
+
+        {% if projects|length == 0 %}
+          <div class="pbox" style="grid-column:1/-1;">
+            <div class="hint">아직 프로젝트가 없습니다. 아래에서 생성해 주세요.</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0;">프로젝트 생성</h3>
+      <div class="hint">PoC 기준으로 프로젝트는 최대 3개까지 생성됩니다.</div>
+
+      {% if can_create %}
+        <form method="post" action="/app/projects/create/" class="create">
+          {% csrf_token %}
+          <input name="name" placeholder="프로젝트명 (예: HR 분석 & 커리어 지원)" />
+          <textarea name="description" rows="3" placeholder="설명(선택)"></textarea>
+          <button class="btn" type="submit" style="width:140px;">생성</button>
+        </form>
+      {% else %}
+        <div class="hint" style="color:#e11d48;">프로젝트 생성 한도(3개)에 도달했습니다.</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

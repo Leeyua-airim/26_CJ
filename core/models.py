@@ -22,6 +22,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
+        
         return self.create_user(login_id=login_id, password=password, **extra_fields)
 
 
@@ -43,11 +44,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("FD", "푸드빌"),
     )
 
-
+    # Google SSO 최초 가입 시점에 임시 ID로 저장할 수 있어야 하므로 blank 허용은 하지 않더라도,
+    # "값이 들어오게" adapter에서 보장합니다.
     login_id = models.CharField(max_length=120, unique=True)
-    affiliation = models.CharField(max_length=20, choices=AFFILIATION_CHOICES)
-    full_name = models.CharField(max_length=50)
-    employee_no = models.CharField(max_length=30, db_index=True)
+    
+    # 최초 가입 시점에는 비어있을 수 있으므로 null/blank 허용 (프로필 완성 화면에서 강제 입력)
+    affiliation = models.CharField(max_length=20, choices=AFFILIATION_CHOICES, 
+                                   blank=True, null=True)
+    
+    full_name = models.CharField(max_length=50, blank=True, default="")
+    employee_no = models.CharField(max_length=30, db_index=True, blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -84,6 +90,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         if self.affiliation and self.employee_no:
             self.login_id = f"{self.affiliation}:{self.employee_no.strip()}"
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
